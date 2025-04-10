@@ -7,22 +7,26 @@ namespace BlackjackCLI.Content.Game
         public Hand DealerHand;
         public Hand PlayerHand;
         public Shoe Shoe;
+        public int Bet;
+        public int Payout = 0;
 
-        public Game()
+        public Game(int bet)
         {
             DealerHand = new Hand();
             PlayerHand = new Hand();
             Shoe = new Shoe();
+            Bet = bet;
         }
 
-        public Game(int numberOfDecks)
+        public Game(int numberOfDecks, int bet)
         {
             DealerHand = new Hand();
             PlayerHand = new Hand();
             Shoe = new Shoe(numberOfDecks);
+            Bet = bet;
         }
 
-        public void StartGame()
+        public int PlayGame()
         {
             Shoe.ShuffleShoe();
             DealInitialCards();
@@ -31,17 +35,23 @@ namespace BlackjackCLI.Content.Game
             Console.WriteLine("Welcome to Blackjack!");
             Console.WriteLine("----------------------");
 
-            CheckInitialState();
+            var canPlay = CheckInitialStateCanPlay();
+            if (!canPlay)
+            {
+                return Payout;
+            }
+
             HandlePlayerTurn();
 
             if (PlayerHand.IsBusted())
             {
                 Console.WriteLine("You busted! Dealer wins.");
-                return;
+                return Payout;
             }
 
             HandleDealerTurn();
             FinalScoreCheck();
+            return Payout;
         }
 
         public void DealInitialCards()
@@ -53,7 +63,7 @@ namespace BlackjackCLI.Content.Game
             DealerHand.AddCard(Shoe.DrawCard());
         }
 
-        public void CheckInitialState()
+        public bool CheckInitialStateCanPlay()
         {
             Console.WriteLine("Dealer's hand: " + DealerHand.ToString());
             Console.WriteLine("Your hand: " + PlayerHand.ToString());
@@ -61,18 +71,20 @@ namespace BlackjackCLI.Content.Game
             if (PlayerHand.IsBlackjack() && DealerHand.IsBlackjack())
             {
                 Console.WriteLine("Push!");
-                return;
+                return false;
             }
             else if (PlayerHand.IsBlackjack())
             {
-                Console.WriteLine("Blackjack! You win!");
-                return;
+                Payout = (int)(Bet * 1.5) + Bet; // Todo: Set payout to be configurable and handle rounding
+                Console.WriteLine($"Blackjack! You win {Payout} chips!");
+                return false;
             }
             else if (DealerHand.IsBlackjack())
             {
                 Console.WriteLine("Dealer has blackjack! Dealer wins.");
-                return;
+                return false;
             }
+            return true;
         }
 
         public void HandlePlayerTurn()
@@ -89,8 +101,8 @@ namespace BlackjackCLI.Content.Game
                 else if (choice.ToLower() == "s")
                 {
                     break;
-            }
                 }
+            }
         }
         public void HandleDealerTurn()
         {
@@ -110,11 +122,13 @@ namespace BlackjackCLI.Content.Game
 
             if (DealerHand.IsBusted())
             {
-                Console.WriteLine("Dealer busted! You win.");
+                Payout = Bet * 2;
+                Console.WriteLine($"Dealer busted! You win {Payout} chips!");
             }
             else if (PlayerHand.Value > DealerHand.Value)
             {
-                Console.WriteLine("You win!");
+                Payout = Bet * 2;
+                Console.WriteLine($"You win {Payout} chips!");
             }
             else if (PlayerHand.Value < DealerHand.Value)
             {
@@ -124,6 +138,7 @@ namespace BlackjackCLI.Content.Game
             {
                 Console.WriteLine("Push!");
             }
+            Console.WriteLine("----------------------\n");
         }
     }
 }
